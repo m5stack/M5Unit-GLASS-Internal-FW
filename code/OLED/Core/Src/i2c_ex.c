@@ -12,6 +12,8 @@ __IO uint8_t tx_buffer[I2C_RECEIVE_BUFFER_LEN];
 __IO uint16_t ubReceiveIndex = 0;
 uint8_t* pSlaveTransmitBuffer = 0;
 volatile uint8_t i2c_addr = 0;
+volatile uint8_t tx_buffer_index = 0;
+volatile uint8_t tx_len = 0;
 
 void set_i2c_slave_address(uint8_t addr)
 {
@@ -36,19 +38,21 @@ void i2c1_it_enable(void)
    *  - Enable Stop interrupt
    */
   LL_I2C_EnableIT_ADDR(I2C1);
-  LL_I2C_EnableIT_NACK(I2C1);
-  LL_I2C_EnableIT_ERR(I2C1);
-  LL_I2C_EnableIT_STOP(I2C1);
+	// LL_I2C_EnableIT_TX(I2C1);
+	// LL_I2C_EnableIT_RX(I2C1);  
+  // LL_I2C_EnableIT_NACK(I2C1);
+  // LL_I2C_EnableIT_ERR(I2C1);
+  // LL_I2C_EnableIT_STOP(I2C1);
 }
 
 void i2c1_it_disable(void)
 {
   LL_I2C_DisableIT_ADDR(I2C1);
-	LL_I2C_DisableIT_TX(I2C1);
-	LL_I2C_DisableIT_RX(I2C1);
-  LL_I2C_DisableIT_NACK(I2C1);
-  LL_I2C_DisableIT_ERR(I2C1);
-  LL_I2C_DisableIT_STOP(I2C1);
+	// LL_I2C_DisableIT_TX(I2C1);
+	// LL_I2C_DisableIT_RX(I2C1);
+  // LL_I2C_DisableIT_NACK(I2C1);
+  // LL_I2C_DisableIT_ERR(I2C1);
+  // LL_I2C_DisableIT_STOP(I2C1);
 }
 
 void Error_Callback(void)
@@ -66,7 +70,8 @@ void i2c1_set_send_data(uint8_t *tx_ptr, uint16_t len) {
     return;
   }
   memcpy((void *)tx_buffer, tx_ptr, len);
-  pSlaveTransmitBuffer = (uint8_t*)tx_buffer;
+  tx_buffer_index = 0;
+  tx_len = len;
 }
 
 void Slave_Reception_Callback(void)
@@ -79,7 +84,11 @@ void Slave_Reception_Callback(void)
 void Slave_Ready_To_Transmit_Callback(void)
 {
   /* Send the Byte requested by the Master */
-  LL_I2C_TransmitData8(I2C1, (uint8_t)(*pSlaveTransmitBuffer++));
+  LL_I2C_TransmitData8(I2C1, tx_buffer[tx_buffer_index]);
+  tx_buffer_index++;
+  if (tx_buffer_index >= tx_len) {
+    tx_buffer_index = 0;
+  }
 }
 
 void I2C1_IRQHandler(void)

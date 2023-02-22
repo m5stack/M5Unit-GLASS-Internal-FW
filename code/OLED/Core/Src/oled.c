@@ -214,8 +214,8 @@ void OLED_ShowChar(u8 x,u8 y,u8 chr,u8 size1,u8 mode)
         // {temp=asc2_1206[chr1][i];} //调用1206字体
 		else if(size1==16)
         {temp=asc2_1608[chr1][i];} //调用1608字体
-		else if(size1==24)
-        {temp=asc2_2412[chr1][i];} //调用2412字体
+		// else if(size1==24)
+        // {temp=asc2_2412[chr1][i];} //调用2412字体
 		else return;
 		for(m=0;m<8;m++)
 		{

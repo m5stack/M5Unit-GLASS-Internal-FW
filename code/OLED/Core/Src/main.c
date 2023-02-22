@@ -63,7 +63,7 @@ typedef struct {
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define FIRMWARE_VERSION 8
+#define FIRMWARE_VERSION 2
 #define BUTTON_FILTER 500
 #define BUTTON_FILTER_TIMEROUT BUTTON_FILTER*3
 #define APPLICATION_ADDRESS     ((uint32_t)0x08001000) 
@@ -273,15 +273,15 @@ void Slave_Complete_Callback(uint8_t *rx_data, uint16_t len)
         OLED_DisplayTurn(invert_status);
       }
     }
-    // else if (rx_data[0] == 0x70) {
-    //   if ((rx_data[1] & 1) == 1) {
-    //     display_on_off_status = 1;
-    //     OLED_DisPlay_On();
-    //   } else {
-    //     display_on_off_status = 0;
-    //     OLED_DisPlay_Off();
-    //   }
-    // }
+    else if (rx_data[0] == 0x70) {
+      if ((rx_data[1] & 1) == 1) {
+        display_on_off_status = 1;
+        OLED_DisPlay_On();
+      } else {
+        display_on_off_status = 0;
+        OLED_DisPlay_Off();
+      }
+    }
     else if ((rx_data[0] >= 0x80) && (rx_data[0] <= 0x82)) {
       for(int i = 0; i < len - 1; i++) {
         rx_buf[rx_data[0]-0x80+i] = rx_data[1+i];
@@ -429,7 +429,9 @@ int main(void)
   MX_I2C1_Init();
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
-	OLED_Init();
+  OLED_Init();
+  OLED_DisPlay_Off();
+  HAL_Delay(1000);
   OLED_DisPlay_On();
   set_i2c_slave_address(0x3D);
   i2c1_it_enable(); 
