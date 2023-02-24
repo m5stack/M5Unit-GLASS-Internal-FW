@@ -16,20 +16,30 @@
 
 //-----------------OLED¶Ë¿Ú¶¨Òå---------------- 
 
-#define OLED_SCL_Clr() HAL_GPIO_WritePin(SCK_GPIO_Port, SCK_Pin, GPIO_PIN_RESET)
-#define OLED_SCL_Set() HAL_GPIO_WritePin(SCK_GPIO_Port, SCK_Pin, GPIO_PIN_SET)
+// #define OLED_SCL_Clr() HAL_GPIO_WritePin(SCK_GPIO_Port, SCK_Pin, GPIO_PIN_RESET)
+// #define OLED_SCL_Set() HAL_GPIO_WritePin(SCK_GPIO_Port, SCK_Pin, GPIO_PIN_SET)
+#define OLED_SCL_Clr() GPIOA->BRR = SCK_Pin
+#define OLED_SCL_Set() GPIOA->BSRR = SCK_Pin
 
-#define OLED_SDA_Clr() HAL_GPIO_WritePin(MOSI_GPIO_Port, MOSI_Pin, GPIO_PIN_RESET)
-#define OLED_SDA_Set() HAL_GPIO_WritePin(MOSI_GPIO_Port, MOSI_Pin, GPIO_PIN_SET)
+// #define OLED_SDA_Clr() HAL_GPIO_WritePin(MOSI_GPIO_Port, MOSI_Pin, GPIO_PIN_RESET)
+// #define OLED_SDA_Set() HAL_GPIO_WritePin(MOSI_GPIO_Port, MOSI_Pin, GPIO_PIN_SET)
+#define OLED_SDA_Clr() GPIOA->BRR = MOSI_Pin
+#define OLED_SDA_Set() GPIOA->BSRR = MOSI_Pin
 
-#define OLED_RES_Clr() HAL_GPIO_WritePin(RESET_GPIO_Port, RESET_Pin, GPIO_PIN_RESET)
-#define OLED_RES_Set() HAL_GPIO_WritePin(RESET_GPIO_Port, RESET_Pin, GPIO_PIN_SET)
+// #define OLED_RES_Clr() HAL_GPIO_WritePin(RESET_GPIO_Port, RESET_Pin, GPIO_PIN_RESET)
+// #define OLED_RES_Set() HAL_GPIO_WritePin(RESET_GPIO_Port, RESET_Pin, GPIO_PIN_SET)
+#define OLED_RES_Clr() GPIOA->BRR = RESET_Pin
+#define OLED_RES_Set() GPIOA->BSRR = RESET_Pin
 
-#define OLED_DC_Clr()  HAL_GPIO_WritePin(DC_GPIO_Port, DC_Pin, GPIO_PIN_RESET)
-#define OLED_DC_Set()  HAL_GPIO_WritePin(DC_GPIO_Port, DC_Pin, GPIO_PIN_SET)
+// #define OLED_DC_Clr()  HAL_GPIO_WritePin(DC_GPIO_Port, DC_Pin, GPIO_PIN_RESET)
+// #define OLED_DC_Set()  HAL_GPIO_WritePin(DC_GPIO_Port, DC_Pin, GPIO_PIN_SET)
+#define OLED_DC_Clr()  GPIOA->BRR = DC_Pin
+#define OLED_DC_Set()  GPIOA->BSRR = DC_Pin
 
-#define OLED_CS_Clr()  HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, GPIO_PIN_RESET)
-#define OLED_CS_Set()  HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, GPIO_PIN_SET)
+// #define OLED_CS_Clr()  HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, GPIO_PIN_RESET)
+// #define OLED_CS_Set()  HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, GPIO_PIN_SET)
+#define OLED_CS_Clr()  GPIOA->BRR = CS_Pin
+#define OLED_CS_Set()  GPIOA->BSRR = CS_Pin
 
 
 #define OLED_CMD  0	//Ğ´ÃüÁî

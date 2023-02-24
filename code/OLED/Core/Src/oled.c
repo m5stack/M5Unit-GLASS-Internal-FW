@@ -1,8 +1,9 @@
 #include "oled.h"
 #include "stdlib.h"
-#include "oledfont.h"  	 
+#include "oledfont.h"  	
+#include <string.h> 
 
-u8 OLED_GRAM[144][8];
+volatile u8 OLED_GRAM[144][8];
 
 //反显函数
 void OLED_ColorTurn(u8 i)
@@ -96,14 +97,15 @@ void OLED_Refresh(void)
 //清屏函数
 void OLED_Clear(void)
 {
-	u8 i,n;
-	for(i=0;i<8;i++)
-	{
-	   for(n=0;n<128;n++)
-			{
-			 OLED_GRAM[n][i]=0;//清除所有数据
-			}
-  }
+	// u8 i,n;
+	// for(i=0;i<8;i++)
+	// {
+	//    for(n=0;n<128;n++)
+	// 		{
+	// 		 OLED_GRAM[n][i]=0;//清除所有数据
+	// 		}
+ 	// }
+	memset(OLED_GRAM, 0, sizeof(OLED_GRAM));
 	OLED_Refresh();//更新显示
 }
 

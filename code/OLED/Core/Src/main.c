@@ -63,7 +63,7 @@ typedef struct {
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define FIRMWARE_VERSION 2
+#define FIRMWARE_VERSION 3
 #define BUTTON_FILTER 500
 #define BUTTON_FILTER_TIMEROUT BUTTON_FILTER*3
 #define APPLICATION_ADDRESS     ((uint32_t)0x08001000) 
@@ -75,6 +75,7 @@ typedef struct {
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+I2C_HandleTypeDef hi2c1;
 
 /* USER CODE BEGIN PV */
 volatile uint8_t fm_version = FIRMWARE_VERSION;
@@ -90,6 +91,7 @@ uint8_t string_buffer[64] = {0};
 uint8_t picture_buffer[1088] = {0};
 uint8_t oled_clear_flag = 0;
 uint8_t oled_show_flag = 0;
+uint8_t oled_set_string_flag = 0;
 //buzz mannual control
 volatile uint16_t buzz_freq = 0;
 volatile uint8_t buzz_duty = 0;
@@ -169,7 +171,7 @@ void set_pwm(uint16_t freq, uint8_t duty)
   // user_tim3_init(period, pulse);
 }
 
-void Slave_Complete_Callback(uint8_t *rx_data, uint16_t len)
+void i2c1_receive_callback(uint8_t *rx_data, uint16_t len)
 {
   uint8_t rx_buf[16];
   uint8_t tx_buf[16];
@@ -204,7 +206,7 @@ void Slave_Complete_Callback(uint8_t *rx_data, uint16_t len)
       if (rx_mark[3]) {
         draw_text_para.mode = rx_buf[3];
       }
-			OLED_ShowString(draw_text_para.pos_x, draw_text_para.pos_y, string_buffer, draw_text_para.size, draw_text_para.mode); 
+      oled_set_string_flag = 1;
     }
     else if ((rx_data[0] >= 0x30) && (rx_data[0] <= 0x32)) {
       for(int i = 0; i < len - 1; i++) {
@@ -430,11 +432,13 @@ int main(void)
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
   OLED_Init();
-  OLED_DisPlay_Off();
-  HAL_Delay(1000);
-  OLED_DisPlay_On();
-  set_i2c_slave_address(0x3D);
-  i2c1_it_enable(); 
+  // OLED_DisPlay_Off();
+  // HAL_Delay(1000);
+  OLED_ColorTurn(0);//0正常显示，1 反色显示
+	OLED_DisplayTurn(0);//0正常显示 1 屏幕翻转显示
+  // set_i2c_slave_address(0x3D);
+  // i2c1_it_enable(); 
+  HAL_I2C_EnableListen_IT(&hi2c1);
   // string_buffer[0] = 'h';
   // string_buffer[1] = 'e';
   // string_buffer[2] = 'l';
@@ -452,12 +456,18 @@ int main(void)
   while (1)
   {
     if (oled_clear_flag) {
-      oled_clear_flag = 0;
+      // LL_I2C_DisableIT_ADDR(I2C1);
       OLED_Clear();
-    }
-    if (oled_show_flag) {
-      oled_show_flag = 0;
+      oled_clear_flag = 0;
+      // LL_I2C_EnableIT_ADDR(I2C1);
+    } else if (oled_set_string_flag){
+      OLED_ShowString(draw_text_para.pos_x, draw_text_para.pos_y, string_buffer, draw_text_para.size, draw_text_para.mode);
+      oled_set_string_flag = 0;
+    } else if (oled_show_flag) {
+      // LL_I2C_DisableIT_ADDR(I2C1);
       OLED_Refresh();
+      oled_show_flag = 0;
+      // LL_I2C_EnableIT_ADDR(I2C1);
     }
     /* USER CODE END WHILE */
 
@@ -523,57 +533,36 @@ static void MX_I2C1_Init(void)
 
   /* USER CODE END I2C1_Init 0 */
 
-  LL_I2C_InitTypeDef I2C_InitStruct = {0};
-
-  LL_GPIO_InitTypeDef GPIO_InitStruct = {0};
-
-  LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_GPIOA);
-  /**I2C1 GPIO Configuration
-  PA9   ------> I2C1_SCL
-  PA10   ------> I2C1_SDA
-  */
-  GPIO_InitStruct.Pin = LL_GPIO_PIN_9;
-  GPIO_InitStruct.Mode = LL_GPIO_MODE_ALTERNATE;
-  GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_HIGH;
-  GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_OPENDRAIN;
-  GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
-  GPIO_InitStruct.Alternate = LL_GPIO_AF_4;
-  LL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-  GPIO_InitStruct.Pin = LL_GPIO_PIN_10;
-  GPIO_InitStruct.Mode = LL_GPIO_MODE_ALTERNATE;
-  GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_HIGH;
-  GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_OPENDRAIN;
-  GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
-  GPIO_InitStruct.Alternate = LL_GPIO_AF_4;
-  LL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-  /* Peripheral clock enable */
-  LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_I2C1);
-
-  /* I2C1 interrupt Init */
-  NVIC_SetPriority(I2C1_IRQn, 0);
-  NVIC_EnableIRQ(I2C1_IRQn);
-
   /* USER CODE BEGIN I2C1_Init 1 */
 
   /* USER CODE END I2C1_Init 1 */
+  hi2c1.Instance = I2C1;
+  hi2c1.Init.Timing = 0x0000020B;
+  hi2c1.Init.OwnAddress1 = 0x3D<<1;
+  hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+  hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+  hi2c1.Init.OwnAddress2 = 0;
+  hi2c1.Init.OwnAddress2Masks = I2C_OA2_NOMASK;
+  hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+  hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+  if (HAL_I2C_Init(&hi2c1) != HAL_OK)
+  {
+    Error_Handler();
+  }
 
-  /** I2C Initialization
+  /** Configure Analogue filter
   */
-  LL_I2C_DisableOwnAddress2(I2C1);
-  LL_I2C_DisableGeneralCall(I2C1);
-  LL_I2C_EnableClockStretching(I2C1);
-  I2C_InitStruct.PeripheralMode = LL_I2C_MODE_I2C;
-  I2C_InitStruct.Timing = 0x2000090E;
-  I2C_InitStruct.AnalogFilter = LL_I2C_ANALOGFILTER_ENABLE;
-  I2C_InitStruct.DigitalFilter = 0;
-  I2C_InitStruct.OwnAddress1 = 0x3D<<1;
-  I2C_InitStruct.TypeAcknowledge = LL_I2C_ACK;
-  I2C_InitStruct.OwnAddrSize = LL_I2C_OWNADDRESS1_7BIT;
-  LL_I2C_Init(I2C1, &I2C_InitStruct);
-  LL_I2C_EnableAutoEndMode(I2C1);
-  LL_I2C_SetOwnAddress2(I2C1, 0, LL_I2C_OWNADDRESS2_NOMASK);
+  if (HAL_I2CEx_ConfigAnalogFilter(&hi2c1, I2C_ANALOGFILTER_ENABLE) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Digital filter
+  */
+  if (HAL_I2CEx_ConfigDigitalFilter(&hi2c1, 0) != HAL_OK)
+  {
+    Error_Handler();
+  }
   /* USER CODE BEGIN I2C1_Init 2 */
 
   /* USER CODE END I2C1_Init 2 */
@@ -603,7 +592,7 @@ static void MX_TIM3_Init(void)
   /* USER CODE BEGIN TIM3_Init 1 */
 
   /* USER CODE END TIM3_Init 1 */
-  TIM_InitStruct.Prescaler = 48-1;
+  TIM_InitStruct.Prescaler = 48-LL_TIM_IC_FILTER_FDIV1_N2;
   TIM_InitStruct.CounterMode = LL_TIM_COUNTERMODE_UP;
   TIM_InitStruct.Autoreload = 250;
   TIM_InitStruct.ClockDivision = LL_TIM_CLOCKDIVISION_DIV1;
